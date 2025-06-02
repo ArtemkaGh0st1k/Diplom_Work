@@ -1,0 +1,45 @@
+DATA_SET_2 : dict[DataSetKeys, int | float | dict[int | str, float]] = \
+    {
+    'count_linse': 2,
+    'lower_lambda': 400,
+    'upper_lambda': 1000,
+    'initial_focus' : 170,
+    'refractive_index': \
+        {                       # Показатель преломления каждой линзы 
+            1: 1.5,
+            2: 1.5
+        },
+    'harmonica' : \
+        {                       # Набор гармоник
+            1: 7,
+            2: 7
+        },
+    'distance': \
+        {                       # Расстояние м/у линзами в
+            '1-2': 10
+        },
+    'refractive_area' : \
+        {                       # Показатели преломления пространства
+                                # м/у линзами
+            '1-2': 1.
+        },
+    'lambda_0': \
+        {                       # Базовая длина волны для каждой линзы
+            1: 550,
+            2: 550
+        },
+    'focus_0': \
+        {                       # Базовый фокус для каждой линзы
+            1: 100,
+            2: 100
+        },
+    'unit' : \
+        {
+            'lower_lambda' : UnitType.NANOMETER,
+            'upper_lambda' : UnitType.NANOMETER,
+            'distance' : UnitType.MILLIMETER,
+            'lambda_0' : UnitType.NANOMETER,
+            'focus_0' : UnitType.MILLIMETER,
+            'initial_focus' : UnitType.CENTIMETR
+        }
+    }
