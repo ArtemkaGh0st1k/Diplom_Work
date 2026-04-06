@@ -103,7 +103,7 @@ class FourLensOptimizer(BaseLensOptimizer):
         np.save(os.path.join(os.getcwd(), "data", "test", "four_lens_array.npy"), foc_dist_hi_optimize)
         min_idx_optimize_h = np.argmin(foc_dist_hi_optimize)
         min_idx = np.unravel_index(min_idx_optimize_h, foc_dist_hi_optimize.shape)
-        H, H_ = np.meshgrid(h_range, h_range)
+        H1, H2, H3 = np.meshgrid(h_range, h_range, h_range)
 
         min_x, min_y, min_z = h_range[min_idx[0]], h_range[min_idx[1]], h_range[min_idx[2]]
         min_foc_dist = foc_dist_hi_optimize[min_idx]
@@ -112,14 +112,14 @@ class FourLensOptimizer(BaseLensOptimizer):
         (
             data=go.Volume\
                 (
-                    x=H.flatten(),
-                    y=H.flatten(),
-                    z=H.flatten(),
+                    x=H1.flatten(),
+                    y=H2.flatten(),
+                    z=H3.flatten(),
                     value=foc_dist_hi_optimize.flatten(),
                     isomin=foc_dist_hi_optimize.min(),
                     isomax=foc_dist_hi_optimize.max(),
-                    opacity=0.01,
-                    surface_count=10,
+                    opacity=0.05,
+                    surface_count=15,
                     colorscale='Viridis'
                 )
         )
@@ -133,7 +133,7 @@ class FourLensOptimizer(BaseLensOptimizer):
                         z=[min_z],
                         mode='markers+text',
                         marker=dict(size=6, color='red'),
-                        text=[f"MIN<br>x={min_x:.2f}<br>y={min_y:.2f}<br>z={min_z:.2f}<br>f={min_foc_dist:.4f}"],
+                        text=[f"MIN<br>h2={min_x:.2f}<br>h3={min_y:.2f}<br>h4={min_z:.2f}<br>f={min_foc_dist:.4f}"],
                         textposition="top center",
                         name="Минимум"
                     )
@@ -144,9 +144,9 @@ class FourLensOptimizer(BaseLensOptimizer):
                 title="Фокальный отрезок",
                 scene=dict\
                     (
-                        xaxis_title=xlabel,
-                        yaxis_title=ylabel,
-                        zaxis_title=zlabel,
+                        xaxis_title='h2',
+                        yaxis_title='h3',
+                        zaxis_title='h4',
                     )
             )
         
