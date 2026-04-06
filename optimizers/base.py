@@ -1,6 +1,8 @@
 from operator import matmul
 from functools import reduce
 from typing import Any, Optional
+from os import getcwd
+from os.path import join
 
 import numpy as np
 from numpy.typing import NDArray
@@ -9,7 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from data.datasets import DATA_SET_2, DATA_SET_3
-from data.dataset_helper import DataSetConfig
+from data.dataset_helper import DataSetHelper
 from utils.converter import *
 from utils.keys import *
 from utils.unit import UnitType, unit_to_str_desc
@@ -198,35 +200,34 @@ class BaseLensOptimizer:
             return (fig, ax)
 
 
-    def visualize_dummmy_loss(self,
-                              dataset : DataSetConfig,
-                              idxs : tuple[int, int] = (0, 1)):
-        # для высот
+    def visualize_dummy_loss_by_two_lens(self, h_range):
+        """
+        Визуализация функции потерь.
+            h_range: массив значений высот микрорельефа для перебора.
+        """
+        
+        H1, H2 = np.meshgrid(h_range, h_range)
+        Z = np.zeros_like(H1)
 
-        h1_range = np.linspace(3, 15, 50)
-        h2_range = np.linspace(3, 15, 50)
-        H1, H2 = np.meshgrid(h1_range, h2_range)
+        dataset = DataSetHelper.create_default_dataset(count_linse=2)
+        for i, h1 in enumerate(h_range):
+            for j, h2 in enumerate(h_range):
+                lmbd_f_dict = self.lmbd_focus_dict(dataset=dataset, heights={UnitType.MICROMETER : [h1, h2]}, return_dict=True)
+                Z[i, j] = self.calc_focus_dist_static(lmbd_f_dict)
 
-        loss_values = np.zeros_like(H1)
-
-        idx1, idx2 = idxs[0], idxs[1]
-
-        for i in range(H1.shape[0]):
-            for j in range(H1.shape[1]):
-                for k in range(H1.shape[0]):
-                    self.lmbd_focus_dict(dataset, heights={UnitType.MICROMETER : [h1_range[i], h2_range[j], h1_range[k]]})
-                    loss_values[i, j] = (self.calc_focus_dist() ** 2)
-
-        #ax : Axes = None
-        fig = plt.figure(figsize=(10, 8))
+        fig = plt.figure(figsize=(10, 7))
         ax = fig.add_subplot(111, projection='3d')
-        ax.plot_surface(H1, H2, loss_values, cmap='plasma')
-        ax.set_xlabel(f'h{idx1+1}')
-        ax.set_ylabel(f'h{idx2+1}')
-        ax.set_zlabel('Loss')
-        ax.set_title('Loss Landscape with Multiple Wavelengths')
-        plt.show(block=True)
+        surf = ax.plot_surface(H1, H2, Z * 1e3, cmap='plasma')  # Преобразуем Z в миллиметры для визуализации
+        
+        path_to_save = join(getcwd(), 'results', 'loss_landscape.png')
 
+        ax.set_xlabel('Высота линзы 1 (мкм)')
+        ax.set_ylabel('Высота линзы 2 (мкм)')
+        ax.set_zlabel('Хроматический размах Δf (мм)')
+        ax.set_title('Ландшафт функции потерь')
+        fig.colorbar(surf)
+        plt.savefig(path_to_save)
+        plt.show()
 
 
     @staticmethod

@@ -1,17 +1,11 @@
-from validators.path_validator import PathValidator
 from optimizers.two_lens import TwoLensOptimizer
 from optimizers.three_lens import ThreeLensOptimizer
 from optimizers.base import BaseLensOptimizer
 from optimizers.four_lens import FourLensOptimizer
 from utils.unit import UnitType
-from data.datasets import DATA_SET_2, DATA_SET_3
-from data.dataset_helper import DataSetHelper, DataSetConfig
+from data.dataset_helper import DataSetHelper
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-from mpl_toolkits.mplot3d import Axes3D
-import plotly.graph_objects as go
 
 if __name__ == '__main__':
 
@@ -34,6 +28,9 @@ if __name__ == '__main__':
     baseLensOptimizer = BaseLensOptimizer()
     one_lens_lfd = baseLensOptimizer.lmbd_focus_dict(dataset=dataset1, return_dict=True)
     (fig1, ax1) = baseLensOptimizer.visualize_depend_f_lmbd(return_fig_ax=True, blockAndShow=True)
+
+    h_range = np.linspace(5, 10, 50)
+    baseLensOptimizer.visualize_dummy_loss_by_two_lens(h_range)
 
     twoLensOptimizer = TwoLensOptimizer()
     two_lens_lfd = twoLensOptimizer.lmbd_focus_dict(dataset=dataset2, return_dict=True)
