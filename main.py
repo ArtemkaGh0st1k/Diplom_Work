@@ -1,7 +1,6 @@
 from optimizers.two_lens import TwoLensOptimizer
 from optimizers.three_lens import ThreeLensOptimizer
 from optimizers.base import BaseLensOptimizer
-from optimizers.four_lens import FourLensOptimizer
 from utils.unit import UnitType
 from data.dataset_helper import DataSetHelper
 
@@ -40,9 +39,20 @@ if __name__ == '__main__':
     three_lens_lfd = threeLensOptimizer.lmbd_focus_dict(dataset=dataset3, heights={UnitType.MICROMETER : [7, 13.88, 14.18]}, return_dict=True)
     (fig3, ax3) = threeLensOptimizer.visualize_depend_f_lmbd(return_fig_ax=True, blockAndShow=False)
 
-    fourLensOptimizer = FourLensOptimizer()
-    four_lens_lfd = fourLensOptimizer.lmbd_focus_dict(dataset=dataset4, heights={UnitType.MICROMETER : [7., 14.18, 13.98, 13.78]}, return_dict=True)
-    (fig4, ax4) = fourLensOptimizer.visualize_depend_f_lmbd(return_fig_ax=True, blockAndShow=False)
+    ax4 = None
+    try:
+        from optimizers.four_lens import FourLensOptimizer
+
+        fourLensOptimizer = FourLensOptimizer()
+        four_lens_lfd = fourLensOptimizer.lmbd_focus_dict(
+            dataset=dataset4, heights={UnitType.MICROMETER: [7.0, 14.18, 13.98, 13.78]}, return_dict=True
+        )
+        (fig4, ax4) = fourLensOptimizer.visualize_depend_f_lmbd(return_fig_ax=True, blockAndShow=False)
+    except ModuleNotFoundError as e:
+        if "plotly" in str(e):
+            print("plotly не установлен — пропускаю расчёты/графики для 4-х линз. Установите: pip install plotly")
+        else:
+            raise
 
 
     baseLensOptimizer.merge_axes_static(ax1, ax2, 
@@ -54,10 +64,13 @@ if __name__ == '__main__':
                                          baseLensOptimizer.calc_focus_dist_static(three_lens_lfd)],
                                          labels=["Мин фок.отрезок 1-й линзы", "Мин фок.отрезок 3-х линз"])
     
-    baseLensOptimizer.merge_axes_static(ax1, ax4, 
-                                        [baseLensOptimizer.calc_focus_dist_static(one_lens_lfd),
-                                        0.003807],
-                                         labels=["Мин фок.отрезок 1-й линзы", "Мин фок.отрезок 4-х линз"])
+    if ax4 is not None:
+        baseLensOptimizer.merge_axes_static(
+            ax1,
+            ax4,
+            [baseLensOptimizer.calc_focus_dist_static(one_lens_lfd), 0.003807],
+            labels=["Мин фок.отрезок 1-й линзы", "Мин фок.отрезок 4-х линз"],
+        )
     
     # twoLensOptimizer.generate_grid_with_fixed_height(init_h=[7., 7.],
     #                                                   hbounds=(5, 12),
