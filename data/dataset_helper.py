@@ -1,5 +1,7 @@
 from typing import TypedDict
+import json
 
+import data
 from utils.keys import *
 from utils.unit import UnitType, set_default_unit
 from validators.input_validator import InputValidator
@@ -15,7 +17,6 @@ class DataSetConfig(TypedDict):
     lambda_0: dict[int, float]
     focus_0: dict[int, float]
     unit: dict[UnitKeys, UnitType]
-
 
 
 class DataSetHelper:
@@ -103,5 +104,27 @@ class DataSetHelper:
         InputValidator.validate_input_dataset(dataset)
 
         return dataset
+
+    
+    @staticmethod
+    def to_json(dataset : DataSetConfig) -> None:
+
+        converter_dict = \
+        {
+            2 : 'two_linse',
+            3 : 'three_linse',
+            4 : 'four_linse',
+            5 : 'five_linse'
+        }
+
+        skip_keys = {'unit'}
+
+        # Создаём новый словарь без этих ключей
+        filtered_dataset = {k: v for k, v in dataset.items() if k not in skip_keys}
+
+        count_linse = converter_dict[dataset['count_linse']]
+        path_to_save = f'results/{count_linse}/dataset.json'
+        with open(path_to_save, "w", encoding="utf-8") as f:
+            json.dump(filtered_dataset, f, indent=4, ensure_ascii=False)
             
         

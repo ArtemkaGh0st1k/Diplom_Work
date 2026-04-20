@@ -1,0 +1,27 @@
+{
+    "count_linse": 2,
+    "lower_lambda": 400,
+    "upper_lambda": 1000,
+    "harmonica": {
+        "1": 7,
+        "2": 7.5
+    },
+    "distance": {
+        "1-2": 10
+    },
+    "focus_0": {
+        "1": 200,
+        "2": 200
+    },
+    "lambda_0": {
+        "1": 550,
+        "2": 550
+    },
+    "refractive_area": {
+        "1-2": 1.0
+    },
+    "refractive_index": {
+        "1": 1.5,
+        "2": 1.5
+    }
+}

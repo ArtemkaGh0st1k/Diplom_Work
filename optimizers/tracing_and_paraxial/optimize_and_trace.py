@@ -173,7 +173,8 @@ class OptimizationAndTracing:
         print(f"Лучшие параметры: h1={best_heights[0]:.2f} мкм, h2={best_heights[1]:.2f} мкм")
         print(f"Минимальный фокальный отрезок: {min_foc_dist*1000:.4f} мм")
         
-        
+        DataSetHelper.to_json(dataset)
+
         return best_heights, min_foc_dist
     
     def optimize_three_lens(self, dataset: Dict,
@@ -215,6 +216,8 @@ class OptimizationAndTracing:
         print(f"Оптимизация 3х линз завершена за {(end_time - start_time) // 60} мин {(end_time - start_time) % 60:.2f} сек")
         print(f"Лучшие параметры: h1={best_heights[0]:.2f} мкм, h2={best_heights[1]:.2f} мкм, h3={best_heights[2]:.2f} мкм")
         print(f"Минимальный фокальный отрезок: {min_foc_dist*1000:.4f} мм")
+
+        DataSetHelper.to_json(dataset)
         
         return best_heights, min_foc_dist
     
@@ -258,6 +261,8 @@ class OptimizationAndTracing:
         print(f"Оптимизация 4х линз завершена за {(end_time - start_time) // 60} мин {(end_time - start_time) % 60:.2f} сек")
         print(f"Лучшие параметры: h1={best_heights[0]:.2f} мкм, h2={best_heights[1]:.2f} мкм, h3={best_heights[2]:.2f} мкм, h4={best_heights[3]:.2f} мкм")
         print(f"Минимальный фокальный отрезок: {min_foc_dist*1000:.4f} мм")
+
+        DataSetHelper.to_json(dataset)
         
         return best_heights, min_foc_dist
     
