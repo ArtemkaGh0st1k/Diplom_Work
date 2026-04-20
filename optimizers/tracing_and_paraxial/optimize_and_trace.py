@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
 """
 Скрипт для оптимизации параметров линз и трассировки лучей
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
+import time
 
-from optimizers.base import BaseLensOptimizer
 from optimizers.two_lens import TwoLensOptimizer
 from optimizers.three_lens import ThreeLensOptimizer
 from optimizers.four_lens import FourLensOptimizer
@@ -125,7 +122,7 @@ class OptimizationAndTracing:
         datasets[3] = DataSetHelper.create_dataset(
             count_linse=3,
             focus_0={1: 300, 2: 300, 3: 300},
-            harmonica={1: 7, 2: 7.5, 3: 8},
+            harmonica={1: 7, 2: 7, 3: 7},
             distance={f'1-2': 10, f'2-3': 10}
         )
         
@@ -133,111 +130,132 @@ class OptimizationAndTracing:
         datasets[4] = DataSetHelper.create_dataset(
             count_linse=4,
             focus_0={1: 400, 2: 400, 3: 400, 4: 400},
-            harmonica={1: 7, 2: 7.5, 3: 8, 4: 8.5},
+            harmonica={1: 7, 2: 7, 3: 7, 4: 7},
             distance={f'1-2': 10, f'2-3': 10, f'3-4': 10}
         )
         
         return datasets
     
-    def optimize_two_lens(self, dataset: Dict) -> Tuple[List[float], float]:
+    def optimize_two_lens(self, dataset: Dict,
+                          h0 : float = 7.,
+                          h_range : np.ndarray = None) -> Tuple[List[float], float]:
         """Оптимизация 2-линзовой системы"""
         optimizer = TwoLensOptimizer()
         
         # Поиск оптимальных высот
-        h_range = np.linspace(5, 15, 100)
+        dataset = DataSetHelper.create_dataset(count_linse=2, harmonica={1 : h0, 2: h0 + 0.5}) if None else dataset
+        h_range = np.linspace(5, 10, 100) if h_range is None else h_range
         min_foc_dist = float('inf')
-        best_heights = [7.0, 7.0]
-        
+        best_heights = [h0, h0]
+
         print("Оптимизация 2-линзовой системы...")
         
-        for h1 in h_range:
-            for h2 in h_range:
-                try:
-                    lmbd_f_dict = optimizer.lmbd_focus_dict(
-                        dataset=dataset, 
-                        heights={UnitType.MICROMETER: [h1, h2]}, 
-                        return_dict=True
-                    )
-                    foc_dist = optimizer.calc_focus_dist_static(lmbd_f_dict)
+        start_time = time.time()
+        for h2 in h_range:
+            try:
+                lmbd_f_dict = optimizer.lmbd_focus_dict(
+                    dataset=dataset, 
+                    heights={UnitType.MICROMETER: [h0, h2]}, 
+                    return_dict=True
+                )
+                foc_dist = optimizer.calc_focus_dist_static(lmbd_f_dict)
+                
+                if foc_dist < min_foc_dist:
+                    min_foc_dist = foc_dist
+                    best_heights = [h0, h2]
                     
-                    if foc_dist < min_foc_dist:
-                        min_foc_dist = foc_dist
-                        best_heights = [h1, h2]
-                        
-                except Exception as e:
-                    continue
+            except Exception as e:
+                continue
         
+        end_time = time.time()
+
+        print(f"Оптимизация 2х линз завершена за {(end_time - start_time) // 60} мин {(end_time - start_time) % 60:.2f} сек")
         print(f"Лучшие параметры: h1={best_heights[0]:.2f} мкм, h2={best_heights[1]:.2f} мкм")
         print(f"Минимальный фокальный отрезок: {min_foc_dist*1000:.4f} мм")
         
+        
         return best_heights, min_foc_dist
     
-    def optimize_three_lens(self, dataset: Dict) -> Tuple[List[float], float]:
+    def optimize_three_lens(self, dataset: Dict,
+                            h0: float = 7.,
+                            h_range: np.ndarray = None) -> Tuple[List[float], float]:
         """Оптимизация 3-линзовой системы"""
         optimizer = ThreeLensOptimizer()
         
         # Поиск оптимальных высот
-        h_range = np.linspace(5, 15, 50)
+        dataset = DataSetHelper.create_dataset(count_linse=3, harmonica={1 : h0, 2: h0, 3: h0}) if None else dataset
+        h_range = np.linspace(5, 10, 50) if h_range is None else h_range
         min_foc_dist = float('inf')
-        best_heights = [7.0, 7.0, 7.0]
+        best_heights = [h0, h0, h0]
         
         print("Оптимизация 3-линзовой системы...")
         
+        start_time = time.time()
+
         # Упрощённый перебор для ускорения
-        for h1 in h_range[::5]:  # Шаг 5 для ускорения
-            for h2 in h_range[::5]:
-                for h3 in h_range[::5]:
+        for h2 in h_range[::2]:  # Шаг 2 для ускорения
+            for h3 in h_range[::2]:
                     try:
                         lmbd_f_dict = optimizer.lmbd_focus_dict(
                             dataset=dataset, 
-                            heights={UnitType.MICROMETER: [h1, h2, h3]}, 
+                            heights={UnitType.MICROMETER: [h0, h2, h3]}, 
                             return_dict=True
                         )
                         foc_dist = optimizer.calc_focus_dist_static(lmbd_f_dict)
                         
                         if foc_dist < min_foc_dist:
                             min_foc_dist = foc_dist
-                            best_heights = [h1, h2, h3]
+                            best_heights = [h0, h2, h3]
                             
                     except Exception as e:
                         continue
         
+        end_time = time.time()
+
+        print(f"Оптимизация 3х линз завершена за {(end_time - start_time) // 60} мин {(end_time - start_time) % 60:.2f} сек")
         print(f"Лучшие параметры: h1={best_heights[0]:.2f} мкм, h2={best_heights[1]:.2f} мкм, h3={best_heights[2]:.2f} мкм")
         print(f"Минимальный фокальный отрезок: {min_foc_dist*1000:.4f} мм")
         
         return best_heights, min_foc_dist
     
-    def optimize_four_lens(self, dataset: Dict) -> Tuple[List[float], float]:
+    def optimize_four_lens(self, dataset: Dict,
+                           h0: float = 7.,
+                           h_range: np.ndarray = None) -> Tuple[List[float], float]:
         """Оптимизация 4-линзовой системы"""
         optimizer = FourLensOptimizer()
         
         # Поиск оптимальных высот (упрощённый перебор)
-        h_range = np.linspace(5, 15, 20)
+        dataset = DataSetHelper.create_dataset(count_linse=4, harmonica={1 : h0, 2: h0, 3: h0, 4: h0}) if None else dataset
+        h_range = np.linspace(5, 10, 50) if h_range is None else h_range
         min_foc_dist = float('inf')
-        best_heights = [7.0, 7.0, 7.0, 7.0]
+        best_heights = [h0, h0, h0, h0]
         
         print("Оптимизация 4-линзовой системы...")
+
+        start_time = time.time()
         
         # Очень упрощённый перебор для ускорения
-        for h1 in h_range[::2]:
-            for h2 in h_range[::2]:
-                for h3 in h_range[::2]:
-                    for h4 in h_range[::2]:
-                        try:
-                            lmbd_f_dict = optimizer.lmbd_focus_dict(
-                                dataset=dataset, 
-                                heights={UnitType.MICROMETER: [h1, h2, h3, h4]}, 
-                                return_dict=True
-                            )
-                            foc_dist = optimizer.calc_focus_dist_static(lmbd_f_dict)
+        for h2 in h_range[::2]:
+            for h3 in h_range[::2]:
+                for h4 in h_range[::2]:
+                    try:
+                        lmbd_f_dict = optimizer.lmbd_focus_dict(
+                            dataset=dataset, 
+                            heights={UnitType.MICROMETER: [h0, h2, h3, h4]}, 
+                            return_dict=True
+                        )
+                        foc_dist = optimizer.calc_focus_dist_static(lmbd_f_dict)
+                        
+                        if foc_dist < min_foc_dist:
+                            min_foc_dist = foc_dist
+                            best_heights = [h0, h2, h3, h4]
                             
-                            if foc_dist < min_foc_dist:
-                                min_foc_dist = foc_dist
-                                best_heights = [h1, h2, h3, h4]
-                                
-                        except Exception as e:
-                            continue
+                    except Exception as e:
+                        continue
+
+        end_time = time.time()
         
+        print(f"Оптимизация 4х линз завершена за {(end_time - start_time) // 60} мин {(end_time - start_time) % 60:.2f} сек")
         print(f"Лучшие параметры: h1={best_heights[0]:.2f} мкм, h2={best_heights[1]:.2f} мкм, h3={best_heights[2]:.2f} мкм, h4={best_heights[3]:.2f} мкм")
         print(f"Минимальный фокальный отрезок: {min_foc_dist*1000:.4f} мм")
         
@@ -288,19 +306,20 @@ class OptimizationAndTracing:
             dataset = datasets[count_linse]
             
             # Оптимизация
-            if count_linse == 2:
-                best_heights, min_foc_dist = self.optimize_two_lens(dataset)
-            elif count_linse == 3:
-                best_heights, min_foc_dist = self.optimize_three_lens(dataset)
-            else:
-                best_heights, min_foc_dist = self.optimize_four_lens(dataset)
-            
+
+            match count_linse:
+                case 2: best_heights, min_foc_dist = self.optimize_two_lens(dataset)
+                case 3: best_heights, min_foc_dist = self.optimize_three_lens(dataset)
+                case 4: best_heights, min_foc_dist = self.optimize_four_lens(dataset)
+                case _: raise ValueError("Unsupported number of lenses")
+
             # Трассировка
             system_name = f"{count_linse}-линзовая система"
             tracing_results = self.trace_rays(dataset, best_heights, system_name)
             
             # Сохранение результатов
-            self.results[count_linse] = {
+            self.results[count_linse] =\
+            {
                 'dataset': dataset,
                 'best_heights': best_heights,
                 'min_foc_dist_paraxial': min_foc_dist,
@@ -385,3 +404,4 @@ class OptimizationAndTracing:
             print(f"  Оптимальные высоты: {[f'{h:.2f} мкм' for h in result['best_heights']]}")
             print(f"  Фокальный отрезок (параксиальный): {result['min_foc_dist_paraxial']*1000:.4f} мм")
             print(f"  Фокальный отрезок (трассировка): {result['tracing_results']['focus_width']:.4f} мм")
+            print(f"  Время оптимизации и трассировки: {result['time'] // 60} мин {result['time'] % 60:.2f} сек")

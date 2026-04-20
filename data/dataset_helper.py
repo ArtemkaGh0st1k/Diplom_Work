@@ -25,13 +25,12 @@ class DataSetHelper:
     @staticmethod
     def create_dataset(**kwargs) -> DataSetConfig:
         """
-            Создает словарь по поданным значениям.\n
-            Если какого-то необходимого ключа нету, то заполнится \n
-            значение по умолчанию для этого ключа
+        Создает словарь по поданным значениям.\n
+        Если какого-то необходимого ключа нету, то заполнится \n
+        значение по умолчанию для этого ключа
         """
 
-        if 'count_linse' not in kwargs: 
-            raise KeyError("Не задано кол-во линз")
+        assert 'count_linse' in kwargs, "Не задано кол-во линз"
         
         expected_types = \
         {
@@ -51,10 +50,11 @@ class DataSetHelper:
         default_dataset = DataSetHelper.create_default_dataset(count_linse)
         
         for key, value in kwargs.items():
-            if not isinstance(value, expected_types[key]):
-                raise TypeError(f"{key} должен быть типа {expected_types[key].__name__}")
-            else:
-                default_dataset[key] = value
+            assert key in expected_types, f"Неизвестный ключ: {key}"
+            assert isinstance(value, expected_types[key]), \
+                f"{key} должен быть типа {expected_types[key].__name__}"
+            
+            default_dataset[key] = value
 
         InputValidator.validate_input_dataset(default_dataset)
 
