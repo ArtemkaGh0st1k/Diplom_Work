@@ -313,6 +313,13 @@ class OptimizationAndTracing:
     def plot_results(self, count_linse: int):
         """Построение графиков результатов"""
         result = self.results[count_linse]
+
+        save_path_dict = \
+        {
+            2: 'two_linse',
+            3: 'three_linse',
+            4: 'four_linse'
+        }
         
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
         
@@ -359,29 +366,22 @@ class OptimizationAndTracing:
                 verticalalignment='top', bbox=props)
         
         plt.tight_layout()
-        plt.savefig(f'results/focus_analysis_{count_linse}_lenses.png', dpi=300, bbox_inches='tight')
+        plt.savefig(f'results/{save_path_dict[count_linse]}/focus_analysis_{count_linse}_lenses.png', dpi=300, bbox_inches='tight')
         plt.show()
         
-        print(f"Графики сохранены в results/focus_analysis_{count_linse}_lenses.png")
+        print(f"Графики сохранены в results/{save_path_dict[count_linse]}/focus_analysis_{count_linse}_lenses.png")
 
-
-def main():
-    """Основная функция"""
-    print("Запуск оптимизации и трассировки для 2х, 3х и 4х линзовых систем...")
+    def start(self):
+        print("Запуск оптимизации и трассировки для 2х, 3х и 4х линзовых систем...")
     
-    optimizer_tracer = OptimizationAndTracing()
-    optimizer_tracer.run_optimization_and_tracing()
-    
-    print("\n" + "="*60)
-    print("РЕЗУЛЬТАТЫ ОПТИМИЗАЦИИ И ТРАССИРОВКИ")
-    print("="*60)
-    
-    for count_linse, result in optimizer_tracer.results.items():
-        print(f"\n{count_linse}-линзовая система:")
-        print(f"  Оптимальные высоты: {[f'{h:.2f} мкм' for h in result['best_heights']]}")
-        print(f"  Фокальный отрезок (параксиальный): {result['min_foc_dist_paraxial']*1000:.4f} мм")
-        print(f"  Фокальный отрезок (трассировка): {result['tracing_results']['focus_width']:.4f} мм")
-
-
-if __name__ == "__main__":
-    main()
+        self.run_optimization_and_tracing()
+        
+        print("\n" + "="*60)
+        print("РЕЗУЛЬТАТЫ ОПТИМИЗАЦИИ И ТРАССИРОВКИ")
+        print("="*60)
+        
+        for count_linse, result in self.results.items():
+            print(f"\n{count_linse}-линзовая система:")
+            print(f"  Оптимальные высоты: {[f'{h:.2f} мкм' for h in result['best_heights']]}")
+            print(f"  Фокальный отрезок (параксиальный): {result['min_foc_dist_paraxial']*1000:.4f} мм")
+            print(f"  Фокальный отрезок (трассировка): {result['tracing_results']['focus_width']:.4f} мм")
