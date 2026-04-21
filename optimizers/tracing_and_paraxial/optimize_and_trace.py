@@ -185,7 +185,7 @@ class OptimizationAndTracing:
         
         # Поиск оптимальных высот
         dataset = DataSetHelper.create_dataset(count_linse=3, harmonica={1 : h0, 2: h0, 3: h0}) if None else dataset
-        h_range = np.linspace(5, 10, 50) if h_range is None else h_range
+        h_range = np.linspace(5, 10, 100) if h_range is None else h_range
         min_foc_dist = float('inf')
         best_heights = [h0, h0, h0]
         
@@ -194,8 +194,8 @@ class OptimizationAndTracing:
         start_time = time.time()
 
         # Упрощённый перебор для ускорения
-        for h2 in h_range[::2]:  # Шаг 2 для ускорения
-            for h3 in h_range[::2]:
+        for h2 in h_range:  # Шаг 2 для ускорения
+            for h3 in h_range:
                     try:
                         lmbd_f_dict = optimizer.lmbd_focus_dict(
                             dataset=dataset, 
