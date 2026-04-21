@@ -1,7 +1,10 @@
+from dataclasses import dataclass
 from typing import Any
 import time
 from colorama import Fore
 import os
+from os.path import join
+from os import getcwd
 
 import numpy as np
 import plotly.graph_objects as go
@@ -14,9 +17,19 @@ from validators.input_validator import InputValidator
 from data.dataset_helper import DataSetHelper
 
 
+@dataclass
+class VisializeData():
+    xlabel: str
+    ylabel: str
+    zlabel: str
+    title: str
+
+
 class FourLensOptimizer(BaseLensOptimizer):
     def __init__(self):
         super().__init__()
+        self.__foc_dist_hi_optimize = None
+        self.__h_range = None
 
     
     def lmbd_focus_dict(self, dataset, heights = None, lambda_massive = None, return_dict=True):
@@ -36,6 +49,7 @@ class FourLensOptimizer(BaseLensOptimizer):
                                         hbounds : tuple[float, float], 
                                         dataset : dict[DataSetKeys, Any],
                                         h_static : Literal['h1', 'h2', 'h3', 'h4'] = 'h1',
+                                        visualize_result : bool = True,
                                         units : dict[UnitKeys, UnitType] = None,
                                         unit_f_dist : UnitType = UnitType.MILLIMETER) -> None:
         
@@ -46,8 +60,8 @@ class FourLensOptimizer(BaseLensOptimizer):
         except Exception:
             raise
 
-        h_range = np.linspace(hbounds[0], hbounds[1], 50)
-        foc_dist_hi_optimize = np.zeros((len(h_range), len(h_range), len(h_range)))
+        self.__h_range = np.linspace(hbounds[0], hbounds[1], 50)
+        self.__foc_dist_hi_optimize = np.zeros((len(self.__h_range), len(self.__h_range), len(self.__h_range)))
 
         start_time = time.time()
 
@@ -60,53 +74,62 @@ class FourLensOptimizer(BaseLensOptimizer):
                 h_static_val = list(init_h.values())[0][0]
                 xlabel, ylabel, zlabel = "h1, мкм", "h2, мкм", "h3, мкм",
                 title = f'h1 fixed = {h_static_val}, мкм'
-                for i, h_i in enumerate(h_range):
-                    for j, h_j in enumerate(h_range):
-                        for k, h_k in enumerate(h_range):
+                for i, h_i in enumerate(self.__h_range):
+                    for j, h_j in enumerate(self.__h_range):
+                        for k, h_k in enumerate(self.__h_range):
                             lmbd_f_hi_optimize = self.lmbd_focus_dict(dataset, heights={UnitType.MICROMETER : [h_static_val, h_i, h_j, h_k]})
-                            foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
+                            self.__foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
             case 'h2':
                 h_static_val = list(init_h.values())[0][1]
                 xlabel, ylabel, zlabel = "h1, мкм", "h3, мкм", "h4, мкм",
                 title = f'h2 fixed = {h_static_val}, мкм'
-                for i, h_i in enumerate(h_range):
-                    for j, h_j in enumerate(h_range):
-                        for k, h_k in enumerate(h_range):
+                for i, h_i in enumerate(self.__h_range):
+                    for j, h_j in enumerate(self.__h_range):
+                        for k, h_k in enumerate(self.__h_range):
                             lmbd_f_hi_optimize = self.lmbd_focus_dict(dataset, heights={UnitType.MICROMETER : [h_i, h_static_val, h_j, h_k]})
-                            foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
+                            self.__foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
             case 'h3':
                 h_static_val = list(init_h.values())[0][2]
                 xlabel, ylabel, zlabel = "h1, мкм", "h2, мкм", "h4, мкм",
                 title = f'h3 fixed = {h_static_val}, мкм'
-                for i, h_i in enumerate(h_range):
-                    for j, h_j in enumerate(h_range):
-                        for k, h_k in enumerate(h_range):
+                for i, h_i in enumerate(self.__h_range):
+                    for j, h_j in enumerate(self.__h_range):
+                        for k, h_k in enumerate(self.__h_range):
                             lmbd_f_hi_optimize = self.lmbd_focus_dict(dataset, heights={UnitType.MICROMETER : [h_i, h_j, h_static_val, h_k]})
-                            foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
+                            self.__foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
             case 'h4':
                 h_static_val = list(init_h.values())[0][3]
                 xlabel, ylabel, zlabel = "h1, мкм", "h2, мкм", "h3, мкм",
                 title = f'h4 fixed = {h_static_val}, мкм'
-                for i, h_i in enumerate(h_range):
-                    for j, h_j in enumerate(h_range):
-                        for k, h_k in enumerate(h_range):
+                for i, h_i in enumerate(self.__h_range):
+                    for j, h_j in enumerate(self.__h_range):
+                        for k, h_k in enumerate(self.__h_range):
                             lmbd_f_hi_optimize = self.lmbd_focus_dict(dataset, heights={UnitType.MICROMETER : [h_i, h_j, h_k, h_static_val]})
-                            foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
+                            self.__foc_dist_hi_optimize[i, j, k] = super().calc_focus_dist_static(lmbd_f_hi_optimize)
             case _:
                 raise
 
-        print("Время работы алгоритма для 3-х линз: ",
+        print("Время работы алгоритма для 4-х линз: ",
               Fore.RED, f"{(time.time() - start_time) // 60} м",
               Fore.GREEN, f"{(time.time() - start_time) % 60} с",
               Fore.WHITE)
         
-        np.save(os.path.join(os.getcwd(), "data", "test", "four_lens_array.npy"), foc_dist_hi_optimize)
-        min_idx_optimize_h = np.argmin(foc_dist_hi_optimize)
-        min_idx = np.unravel_index(min_idx_optimize_h, foc_dist_hi_optimize.shape)
-        H1, H2, H3 = np.meshgrid(h_range, h_range, h_range)
+        np.save(join(getcwd(), "data", "test", "four_lens_array.npy"), self.__foc_dist_hi_optimize)
+        if visualize_result:
+            vis_data = VisializeData(xlabel=xlabel, ylabel=ylabel, zlabel=zlabel, title=title)
+            self.visualize(vis_data)
 
-        min_x, min_y, min_z = h_range[min_idx[0]], h_range[min_idx[1]], h_range[min_idx[2]]
-        min_foc_dist = foc_dist_hi_optimize[min_idx]
+    def visualize(self, vis_data : VisializeData = None) -> None:
+        
+        assert self.__foc_dist_hi_optimize is not None and self.__h_range is not None,\
+            "Сначала нужно вызвать generate_grid_with_fixed_height для генерации данных для визуализации"
+
+        min_idx_optimize_h = np.argmin(self.__foc_dist_hi_optimize)
+        min_idx = np.unravel_index(min_idx_optimize_h, self.__foc_dist_hi_optimize.shape)
+        H1, H2, H3 = np.meshgrid(self.__h_range, self.__h_range, self.__h_range)
+
+        min_x, min_y, min_z = self.__h_range[min_idx[0]], self.__h_range[min_idx[1]], self.__h_range[min_idx[2]]
+        min_foc_dist = self.__foc_dist_hi_optimize[min_idx]
 
         fig = go.Figure\
         (
@@ -115,9 +138,9 @@ class FourLensOptimizer(BaseLensOptimizer):
                     x=H1.flatten(),
                     y=H2.flatten(),
                     z=H3.flatten(),
-                    value=foc_dist_hi_optimize.flatten(),
-                    isomin=foc_dist_hi_optimize.min(),
-                    isomax=foc_dist_hi_optimize.max(),
+                    value=self.__foc_dist_hi_optimize.flatten(),
+                    isomin=self.__foc_dist_hi_optimize.min(),
+                    isomax=self.__foc_dist_hi_optimize.max(),
                     opacity=0.05,
                     surface_count=15,
                     colorscale='Viridis'
@@ -141,12 +164,12 @@ class FourLensOptimizer(BaseLensOptimizer):
 
         fig.update_layout\
             (
-                title="Фокальный отрезок",
+                title=vis_data.title if vis_data else "Зависимость фокусного расстояния от высот линз",
                 scene=dict\
                     (
-                        xaxis_title='h2',
-                        yaxis_title='h3',
-                        zaxis_title='h4',
+                        xaxis_title=vis_data.xlabel if vis_data else 'h2',
+                        yaxis_title=vis_data.ylabel if vis_data else 'h3',
+                        zaxis_title=vis_data.zlabel if vis_data else 'h4',
                     )
             )
         
