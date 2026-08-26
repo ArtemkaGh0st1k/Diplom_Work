@@ -1,5 +1,7 @@
 from typing import TypedDict
+import json
 
+import data
 from utils.keys import *
 from utils.unit import UnitType, set_default_unit
 from validators.input_validator import InputValidator
@@ -17,7 +19,6 @@ class DataSetConfig(TypedDict):
     unit: dict[UnitKeys, UnitType]
 
 
-
 class DataSetHelper:
     """Вспомгательный класс для создания датасетов"""
 
@@ -25,13 +26,12 @@ class DataSetHelper:
     @staticmethod
     def create_dataset(**kwargs) -> DataSetConfig:
         """
-            Создает словарь по поданным значениям.\n
-            Если какого-то необходимого ключа нету, то заполнится \n
-            значение по умолчанию для этого ключа
+        Создает словарь по поданным значениям.\n
+        Если какого-то необходимого ключа нету, то заполнится \n
+        значение по умолчанию для этого ключа
         """
 
-        if 'count_linse' not in kwargs: 
-            raise KeyError("Не задано кол-во линз")
+        assert 'count_linse' in kwargs, "Не задано кол-во линз"
         
         expected_types = \
         {
@@ -51,10 +51,11 @@ class DataSetHelper:
         default_dataset = DataSetHelper.create_default_dataset(count_linse)
         
         for key, value in kwargs.items():
-            if not isinstance(value, expected_types[key]):
-                raise TypeError(f"{key} должен быть типа {expected_types[key].__name__}")
-            else:
-                default_dataset[key] = value
+            assert key in expected_types, f"Неизвестный ключ: {key}"
+            assert isinstance(value, expected_types[key]), \
+                f"{key} должен быть типа {expected_types[key].__name__}"
+            
+            default_dataset[key] = value
 
         InputValidator.validate_input_dataset(default_dataset)
 
@@ -103,5 +104,27 @@ class DataSetHelper:
         InputValidator.validate_input_dataset(dataset)
 
         return dataset
+
+    
+    @staticmethod
+    def to_json(dataset : DataSetConfig) -> None:
+
+        converter_dict = \
+        {
+            2 : 'two_linse',
+            3 : 'three_linse',
+            4 : 'four_linse',
+            5 : 'five_linse'
+        }
+
+        skip_keys = {'unit'}
+
+        # Создаём новый словарь без этих ключей
+        filtered_dataset = {k: v for k, v in dataset.items() if k not in skip_keys}
+
+        count_linse = converter_dict[dataset['count_linse']]
+        path_to_save = f'results/{count_linse}/dataset.json'
+        with open(path_to_save, "w", encoding="utf-8") as f:
+            json.dump(filtered_dataset, f, indent=4, ensure_ascii=False)
             
         
