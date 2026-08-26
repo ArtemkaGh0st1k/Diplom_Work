@@ -30,6 +30,15 @@ class BaseLensOptimizer:
     def calc_focus_dist_static(lmbd_f_dict : dict[float, float]) -> float:
         f_list = list(lmbd_f_dict.values())
         return  max(f_list) - min(f_list)
+    
+    def get_lambda_range(self, dataset: dict) -> np.ndarray:
+        """Получение диапазона длин волн"""
+        l_lmbd_unit = dataset['unit']['lower_lambda'].value[0]
+        u_lmbd_unit = dataset['unit']['upper_lambda'].value[0]
+        
+        return np.linspace(dataset['lower_lambda'] * l_lmbd_unit,
+                          dataset['upper_lambda'] * u_lmbd_unit,
+                          601)
 
 
     def calc_focus_dist(self):
