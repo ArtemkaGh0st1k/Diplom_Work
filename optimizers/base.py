@@ -49,6 +49,30 @@ class BaseLensOptimizer:
         return len_f_dist
 
 
+    def harmonic_lens_focus(self, height: float, harmonica: float,
+                            lambda_0: float, focus_0: float,
+                            lmbd: float) -> float:
+        '''
+        Description:
+        -----------
+        Фокусное расстояние гармонической линзы в рабочем порядке дифракции
+        (все величины в СИ)\n
+        alpha = H * (n(lambda) - 1) / lambda -> фазовая задержка рельефа в длинах волн\n
+        k = round(alpha) -> рабочий целый порядок дифракции\n
+        f = (m * lambda_0) / (k * lambda) * f_0
+        '''
+
+        # Порядок дифракции только целый: при alpha = k + 0.5 энергия
+        # делится между порядками k и k + 1, "полуцелого" фокуса нет
+        alpha = height * (self.n_bk7(lmbd * 1e6) - 1) / lmbd
+        k = int(np.floor(alpha + 0.5))
+        if k < 1:
+            raise ValueError(f"На длине волны {lmbd} м нет рабочего "
+                             f"порядка дифракции (alpha = {alpha:.3f} < 0.5)")
+
+        return ((harmonica * lambda_0) / (k * lmbd)) * focus_0
+
+
     def lmbd_focus_dict(self,
                         dataset: dict[DataSetKeys, Any],
                         heights: dict[UnitType, list[float]] = None,
@@ -59,22 +83,28 @@ class BaseLensOptimizer:
         Description:
         -----------
         Целевая функция\n
+        Модель: зоны каждой линзы фиксированы параметрами (m, lambda_0, f_0),
+        высота микрорельефа H влияет только на выбор рабочего порядка k
+        (см. theory/NOTES.md, Антонов, Грейсух 2019, ф. 3 и 14)\n
         Формулы и методы используемые в алгоритме:\n
-        m -> гармоника, целое фиксированное число\n
-        lambda_0 -> базовая длина волны, идёт подбор этой длины в зависимости от поданной высоты\n
+        m -> гармоника (порядок гармоничности зон)\n
+        lambda_0 -> расчётная длина волны, фиксирована (задаёт радиусы зон)\n
+        alpha = H * (n(lambda) - 1) / lambda -> фазовая задержка рельефа в длинах волн\n
+        k = round(alpha) -> рабочий (доминирующий) целый порядок дифракции\n
         f = (m * lambda_0) / (k * lambda) * f_0 \n
         матрица преломления -> R = [1 0; -D 1], где D - оптич.сила\n
-        матрица переноса -> T = [1 d/n; 0 1], где d - расстояние м/у линзами
+        матрица переноса -> T = [1 d/n; 0 1], где d - расстояние м/у линзами\n
+        положение фокуса за последней линзой (задний отрезок) -> -A / C
 
-        Return: 
+        Return:
         -------
-        Возвращяет словарь длин волн и фокусных расстояний
+        Возвращяет словарь длин волн и задних фокальных отрезков
 
         :Params:\n
         -------
         - dataset: Исходные данные в виде словаря\n
         - heights: Список высот и их размерность\n
-        - lambda_massive: Массив высот\n
+        - lambda_massive: Массив длин волн (в метрах)\n
         - return_dict: Нужно ли вовзращать словарь
         '''
 
@@ -83,12 +113,13 @@ class BaseLensOptimizer:
         except (KeyError, IndexError, ValueError):
             dataset = DATA_SET_2.copy()     # используется словарь для 2-х линз по умолчанию !!!
             if heights is not None:
-                if len(heights) == 2: dataset = DATA_SET_2.copy()
-                if len(heights) == 3: dataset = DATA_SET_3.copy()
+                count_heights = len(list(heights.values())[0])
+                if count_heights == 2: dataset = DATA_SET_2.copy()
+                elif count_heights == 3: dataset = DATA_SET_3.copy()
                 else: raise Exception("Число высот должно быть равно 2 или 3!")
         except Exception:
             raise
-        
+
         self._dataset = dataset.copy()
 
         h_list : list[float] = None
@@ -113,23 +144,17 @@ class BaseLensOptimizer:
             matrix_mults_list = []
 
             for i in range(1, dataset['count_linse'] + 1):
-                refractive_index = self.n_bk7(lmbd * 1e6)
                 focus_0 = dataset['focus_0'][i] * f0_unit
                 harmonica = dataset['harmonica'][i]
-                
+                lambda_0 = dataset['lambda_0'][i] * lmbd0_unit
+
+                # По умолчанию высота согласована с зонами: H = m * lambda_0 / (n(lambda_0) - 1)
                 height = (h_list[i-1] * h_unit
                           if heights is not None
-                          else 
-                          (dataset['harmonica'][i] * dataset['lambda_0'][i] / (dataset['refractive_index'][i] - 1)) * \
-                           lmbd0_unit)
-                #harmonica = custom_round(height * dataset['lambda_0'][i] / (refractive_index - 1) * 1e3) 
-                
-                lambda_0 = height * (refractive_index - 1) / harmonica            
-                k = custom_round((lambda_0 / (lmbd)) * harmonica)
-                if k == 0:
-                    k = 0.5
+                          else
+                          harmonica * lambda_0 / (self.n_bk7(lambda_0 * 1e6) - 1))
 
-                focus = ((harmonica * lambda_0) / (k * lmbd)) * focus_0
+                focus = self.harmonic_lens_focus(height, harmonica, lambda_0, focus_0, lmbd)
                 optic_power = (1 / focus)
 
                 refractive_matrix = np.array\
@@ -163,7 +188,8 @@ class BaseLensOptimizer:
             matrix_mults_list = np.array(matrix_mults_list)
 
             mult_res = reduce(matmul, matrix_mults_list)
-            lmbd_f_dict[lmbd] = - 1 / mult_res[1, 0]
+            # Положение фокуса за последней линзой: -A / C (эффективный фокус был бы -1 / C)
+            lmbd_f_dict[lmbd] = - mult_res[0, 0] / mult_res[1, 0]
 
         self._lmbd_f_dict = lmbd_f_dict
         self._len_f_dist = self.calc_focus_dist()
@@ -194,9 +220,9 @@ class BaseLensOptimizer:
         ax : Axes = None
         fig, ax = plt.subplots(1, 1)
 
-        ax.set_title('Зависимость фокусного расстояния от длины волны')
+        ax.set_title('Зависимость положения фокуса от длины волны')
         ax.set_xlabel(f'Длина волны, {xl}')
-        ax.set_ylabel(f'Фокусное расстояние, {yl}')
+        ax.set_ylabel(f'Задний фокальный отрезок, {yl}')
         ax.grid(which="both")
         ax.plot(lmbd_list, f_list)
         ax.legend(loc='upper center',

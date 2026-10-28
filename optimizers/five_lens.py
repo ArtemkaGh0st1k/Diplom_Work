@@ -3,6 +3,9 @@
 """
 
 from typing import Dict, List, Tuple, Union
+
+import numpy as np
+
 from data.dataset_helper import DataSetHelper
 from utils.unit import UnitType
 from utils.keys import DataSetKeys
@@ -27,65 +30,21 @@ class FiveLensOptimizer(BaseLensOptimizer):
             distance=distance
         )
     
-    def lmbd_focus_dict(self, dataset: Dict[DataSetKeys, any], 
-                       heights: Dict[Union[UnitType, str], List[float]], 
-                       return_dict: bool = False) -> Union[Dict[float, float], Dict[str, List[float]]]:
-        """Расчёт фокусных расстояний для 5-линзовой системы"""
-        if isinstance(list(heights.keys())[0], str):
-            heights = {UnitType.MICROMETER: heights['heights']}
-        
-        h = heights[UnitType.MICROMETER]
-        
-        if len(h) != 5:
-            raise ValueError("Для 5-линзовой системы необходимо 5 высот")
-        
-        lambda_range = self.get_lambda_range(dataset)
-        focus_positions = []
-        
-        for lmbd in lambda_range:
-            # Расчёт для каждой линзы
-            h_current = h[0]
-            alpha = 0.0
-            
-            for i in range(1, 6):
-                refractive_index = self.n_bk7(lmbd * 1e6)
-                focus_0 = dataset['focus_0'][i] * 1e-3
-                harmonica = dataset['harmonica'][i]
-                height = h[i-1] * 1e-6
-                
-                lambda_0 = height * (refractive_index - 1) / harmonica
-                k = round((lambda_0 / lmbd) * harmonica)
-                if k == 0:
-                    k = 0.5
-                    
-                focus = ((harmonica * lambda_0) / (k * lmbd)) * focus_0
-                optic_power = 1 / focus
-                
-                # Преломление
-                h_new = h_current
-                alpha_new = alpha - optic_power * h_current
-                
-                # Перенос
-                if i < 5:
-                    refractive_area = dataset['refractive_area'][f'{i}-{i+1}']
-                    dist = dataset['distance'][f'{i}-{i+1}'] * 1e-3
-                    reduce_dist = dist / refractive_area
-                    
-                    h_current = h_new + alpha_new * reduce_dist
-                    alpha = alpha_new
-                else:
-                    h_current = h_new
-                    alpha = alpha_new
-            
-            focus_positions.append(h_current / alpha if abs(alpha) > 1e-10 else float('inf'))
-        
-        if return_dict:
-            return {
-                'lambda': lambda_range,
-                'focus': focus_positions
-            }
-        else:
-            return dict(zip(lambda_range, focus_positions))
+    def lmbd_focus_dict(self, dataset: Dict[DataSetKeys, any],
+                       heights: Dict[Union[UnitType, str], List[float]] = None,
+                       lambda_massive: List[float] = None,
+                       return_dict: bool = True) -> Dict[float, float]:
+        """Расчёт задних фокальных отрезков для 5-линзовой системы (общая модель из base.py)"""
+        if dataset['count_linse'] != 5:
+            raise ValueError(f"Система должна состоять из 5 линз, а не {dataset['count_linse']}")
+
+        if heights is not None:
+            if isinstance(list(heights.keys())[0], str):
+                heights = {UnitType.MICROMETER: heights['heights']}
+            if len(list(heights.values())[0]) != 5:
+                raise ValueError("Для 5-линзовой системы необходимо 5 высот")
+
+        return super().lmbd_focus_dict(dataset, heights, lambda_massive, return_dict)
     
     def calc_focus_dist_static(self, lmbd_f_dict: Dict[float, float]) -> float:
         """Расчёт фокусного расстояния для 5-линзовой системы"""

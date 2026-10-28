@@ -67,27 +67,22 @@ class TwoLensOptimizer(BaseLensOptimizer):
             f0_1 = dataset['focus_0'][1] * units['focus_0'].value[0]
             f0_2 = dataset['focus_0'][2] * units['focus_0'].value[0]
 
-            ref_idx1 = dataset['refractive_index'][1]
-            ref_idx2 = dataset['refractive_index'][2]
-
             ref_ar = dataset['refractive_area']['1-2']
 
             d = dataset['distance']['1-2'] * units['distance'].value[0] / ref_ar
 
-            lmbd0_1 = h_1 * (ref_idx1 - 1) / m1
-            lmbd0_2 = h_2 * (ref_idx2 - 1) / m2
+            lmbd0_1 = dataset['lambda_0'][1] * units['lambda_0'].value[0]
+            lmbd0_2 = dataset['lambda_0'][2] * units['lambda_0'].value[0]
 
-            k1 = custom_round((lmbd0_1 / (lmbd)) * m1)
-            k2 = custom_round((lmbd0_2 / (lmbd)) * m2)
-
-            f1 = ((m1 * lmbd0_1) / (k1 * lmbd)) * f0_1
-            f2 = ((m2 * lmbd0_2) / (k2 * lmbd)) * f0_2
+            f1 = self.harmonic_lens_focus(h_1, m1, lmbd0_1, f0_1, lmbd)
+            f2 = self.harmonic_lens_focus(h_2, m2, lmbd0_2, f0_2, lmbd)
 
             D1 = 1 / f1
             D2 = 1 / f2
             D = D1 + D2 - d * D1 * D2
 
-            lmbd_f_dict[lmbd] = 1 / D
+            # Задний фокальный отрезок: (1 - d * D1) / D
+            lmbd_f_dict[lmbd] = (1 - d * D1) / D
 
         len_f_dist = super().calc_focus_dist_static(lmbd_f_dict)
         self._len_f_dist = len_f_dist
@@ -132,21 +127,13 @@ class TwoLensOptimizer(BaseLensOptimizer):
 
             for i in range(1 , dataset['count_linse'] + 1):
 
-                #harmonica = harm_list[i-1]
+                harmonica = harm_list[i-1]
 
-                lmbd0 = dataset['lambda_0'][i] * units['lambda_0']._value_[0]
-                ref_idx = dataset['refractive_index'][i]
+                lmbd0 = dataset['lambda_0'][i] * units['lambda_0'].value[0]
                 focus_0 = dataset['focus_0'][i] * units['focus_0'].value[0]
                 height = h_list[i-1]
-                harmonica = height * (ref_idx - 1) / lmbd0 
 
-                #lmbd0 = height * (ref_idx - 1) / harmonica
-
-                k = custom_round((lmbd0 / (lmbd)) * harmonica)
-                if k == 0:
-                    k = 0.5
-
-                focus = ((harmonica * lmbd0) / (k * lmbd)) * focus_0
+                focus = self.harmonic_lens_focus(height, harmonica, lmbd0, focus_0, lmbd)
                 optic_power =  1 / focus
 
                 refractive_matrix = np.array\
@@ -179,7 +166,8 @@ class TwoLensOptimizer(BaseLensOptimizer):
             matrix_mults_list = np.array(matrix_mults_list)
 
             mult_res = reduce(matmul, matrix_mults_list)
-            lmbd_f_dict[lmbd] = - 1 / mult_res[1, 0]
+            # Задний фокальный отрезок: -A / C
+            lmbd_f_dict[lmbd] = - mult_res[0, 0] / mult_res[1, 0]
 
         len_f_dist = super().calc_focus_dist_static(lmbd_f_dict)
         self._len_f_dist = len_f_dist
