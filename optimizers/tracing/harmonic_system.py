@@ -21,7 +21,8 @@ from optimizers.tracing.system import OpticalSystem, bk7_medium, constant_medium
 from utils.keys import DataSetKeys
 from utils.unit import UnitType
 
-MM = 1e-3   # метров в миллиметре
+MM = 1e-3          # метров в миллиметре
+MIN_GAP_MM = 0.02  # минимальный зазор между подложкой и следующей линзой (рельеф ~ 10 мкм)
 
 
 def build_system(dataset: dict[DataSetKeys, Any],
@@ -35,7 +36,8 @@ def build_system(dataset: dict[DataSetKeys, Any],
 
     :param heights: высоты микрорельефа как в lmbd_focus_dict; None - согласованные
         с зонами H = m * λ0 / (n(λ0) - 1)
-    :param substrate_mm: толщина подложки линзы (расстояние до плоской грани)
+    :param substrate_mm: толщина подложки линзы (расстояние до плоской грани);
+        если distance меньше substrate_mm + MIN_GAP_MM, линзы ставятся вплотную
     :param mode: MODE_GRATING (согласовано с base.py) или MODE_CPP (как в C++)
     """
     units = dataset['unit']
@@ -60,10 +62,11 @@ def build_system(dataset: dict[DataSetKeys, Any],
         else:
             hr = m * lw0 / (n0 - 1.0)
 
+        # f0 < 0 - рассеивающая линза: профиль растёт к краю, запас по толщине не нужен
         p = f0 * (n0 - 1.0)
         sag = (diameter_mm / 2.0) ** 2 / (2.0 * p)
         surfaces.append(Surface(num=2 * i - 1, type=PARABOLA, P=p,
-                                diameter=diameter_mm, thickness=sag + hr,
+                                diameter=diameter_mm, thickness=max(sag, 0.0) + hr,
                                 n1=1.0, n2=n0, z_lens=z, harm=m, hr=hr, lw0=lw0))
         media.append((air, glass))
 
@@ -75,8 +78,10 @@ def build_system(dataset: dict[DataSetKeys, Any],
         media.append((glass, air))
 
         if i != dataset['count_linse']:
-            z += dataset['distance'][f'{i}-{i + 1}'] * dist_unit / \
+            step = dataset['distance'][f'{i}-{i + 1}'] * dist_unit / \
                 dataset['refractive_area'][f'{i}-{i + 1}']
+            # Линзы не могут пересекаться: при d меньше подложки ставим их вплотную
+            z += max(step, substrate_mm + MIN_GAP_MM)
 
     return OpticalSystem(surfaces, media, mode=mode, skip_zone_jumps=skip_zone_jumps)
 
