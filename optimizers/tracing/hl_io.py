@@ -10,8 +10,8 @@ from pathlib import Path
 
 import numpy as np
 
-from tracing.surface import Surface
-from tracing.system import Medium, OpticalSystem, constant_medium, table_medium
+from optimizers.tracing.surface import Surface
+from optimizers.tracing.system import Medium, OpticalSystem, constant_medium, table_medium
 
 DEFAULT_LW0 = 0.0007   # мм, значение по умолчанию в таблице Form4 (700 нм)
 

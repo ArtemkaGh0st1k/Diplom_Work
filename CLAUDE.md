@@ -16,7 +16,7 @@
 
 - `optimizers/` — целевая функция (`base.py`), оптимизаторы для 2–5 линз,
   `tracing_and_paraxial/optimize_and_trace.py` — оптимизация + проверка трассировкой
-- `tracing/` — трассировка лучей: перенос C++ программы Harmony научного
+- `optimizers/tracing/` — трассировка лучей: перенос C++ программы Harmony научного
   руководителя (исходник: `C:\Users\Артем\Desktop\Study\NIR\Harmonic Lens 1 Copy`)
   и связка с датасетами проекта (`trace_focus_dict`)
 - `data/` — исходные датасеты и тестовые массивы

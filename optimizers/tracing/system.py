@@ -13,7 +13,7 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from tracing.surface import MODE_CPP, Surface, beam_axe
+from optimizers.tracing.surface import MODE_CPP, Surface, beam_axe
 from utils.materials import n_bk7
 
 # Показатель преломления среды как функция длины волны (в мм)

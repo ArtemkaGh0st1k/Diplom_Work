@@ -14,7 +14,7 @@ from optimizers.four_lens import FourLensOptimizer
 from data.dataset_helper import DataSetHelper
 from utils.unit import UnitType
 from utils.keys import DataSetKeys
-from tracing import trace_focus_dict
+from optimizers.tracing import trace_focus_dict
 
 
 class OptimizationAndTracing:

@@ -16,8 +16,8 @@ from typing import Any, Optional
 
 import numpy as np
 
-from tracing.surface import MODE_GRATING, PARABOLA, PLANE, Surface
-from tracing.system import OpticalSystem, bk7_medium, constant_medium
+from optimizers.tracing.surface import MODE_GRATING, PARABOLA, PLANE, Surface
+from optimizers.tracing.system import OpticalSystem, bk7_medium, constant_medium
 from utils.keys import DataSetKeys
 from utils.unit import UnitType
 

@@ -16,7 +16,7 @@
 > - пп. 1.3 и 1.4 относятся и к C++.
 >
 > Файлы из раздела 2 удалены. Вместо них сделан перенос C++ в пакет
-> `tracing/`, см. раздел 5.
+> `optimizers/tracing/`, см. раздел 5.
 
 ---
 
@@ -315,17 +315,17 @@ BFL = −A/C. В текущей конфигурации разница небо
 
 ---
 
-## 5. Перенос C++ трассировщика (пакет `tracing/`)
+## 5. Перенос C++ трассировщика (пакет `optimizers/tracing/`)
 
 Источник: `Harmlens.cpp` (класс `HarmLens`, `Harm_lam`) и `Unit1.cpp` (меню
 трассировки N7/N12/N13/N15). GUI (VCL), BMP и картинка ФРТ не переносились.
 
 | Модуль | Что перенесено |
 |---|---|
-| `tracing/surface.py` | `HarmLens`: профили типов 0–5, `Harmonization`, `Norm`/`Norm_m`, `BeamLens` (бисекция + Снелл), `Harm_lam`, `BeamAxe`, `BeamPlaneR` |
-| `tracing/system.py` | система поверхностей; веер лучей и средний фокус (`N12Click`), фокальный сдвиг по спектру (`N15Click`); среды: константа, BK7, таблица `.nnn` |
-| `tracing/hl_io.py` | чтение мастер-файла, `.hl` и `.nnn`; система «по умолчанию» (`N2Click`) |
-| `tracing/harmonic_system.py` | связка с проектом: датасет + высоты → поверхности; `trace_focus_dict` — аналог `lmbd_focus_dict` по трассировке |
+| `optimizers/tracing/surface.py` | `HarmLens`: профили типов 0–5, `Harmonization`, `Norm`/`Norm_m`, `BeamLens` (бисекция + Снелл), `Harm_lam`, `BeamAxe`, `BeamPlaneR` |
+| `optimizers/tracing/system.py` | система поверхностей; веер лучей и средний фокус (`N12Click`), фокальный сдвиг по спектру (`N15Click`); среды: константа, BK7, таблица `.nnn` |
+| `optimizers/tracing/hl_io.py` | чтение мастер-файла, `.hl` и `.nnn`; система «по умолчанию» (`N2Click`) |
+| `optimizers/tracing/harmonic_system.py` | связка с проектом: датасет + высоты → поверхности; `trace_focus_dict` — аналог `lmbd_focus_dict` по трассировке |
 
 Соглашения C++ сохранены: длины в мм, поверхность в `Z_Lens − Section(r)`,
 профиль из 100000 отсчётов, нормаль по конечной разности. Код векторизован
