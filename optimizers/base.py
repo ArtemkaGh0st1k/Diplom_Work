@@ -12,8 +12,8 @@ from matplotlib.figure import Figure
 
 from data.datasets import DATA_SET_2, DATA_SET_3
 from data.dataset_helper import DataSetHelper
-from utils.converter import *
 from utils.keys import *
+from utils.materials import n_bk7
 from utils.unit import UnitType, unit_to_str_desc
 from validators.input_validator import InputValidator
 
@@ -297,13 +297,7 @@ class BaseLensOptimizer:
         if blockAndShow:
             plt.show(block=True)
         plt.close()
-        
-        # тестирование некоторых случаев 
 
-    
+
     def n_bk7(self, lambda_um: float) -> float:
-        B1, B2, B3 = 1.03961212, 0.231792344, 1.01046945
-        C1, C2, C3 = 6.00069867e-3, 2.00179144e-2, 1.03560653e2
-        l2 = lambda_um**2
-        n2 = 1 + (B1 * l2) / (l2 - C1) + (B2 * l2) / (l2 - C2) + (B3 * l2) / (l2 - C3)
-        return n2**0.5
+        return n_bk7(lambda_um)

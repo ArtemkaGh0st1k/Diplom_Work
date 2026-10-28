@@ -1,5 +1,6 @@
 """
-Скрипт для оптимизации параметров линз и трассировки лучей
+Скрипт для оптимизации параметров линз (параксиальный расчёт) и проверки
+найденных высот трассировкой лучей (перенос C++ программы, пакет tracing)
 """
 
 import numpy as np
@@ -13,91 +14,7 @@ from optimizers.four_lens import FourLensOptimizer
 from data.dataset_helper import DataSetHelper
 from utils.unit import UnitType
 from utils.keys import DataSetKeys
-
-
-class RayTracer:
-    """Класс для трассировки лучей через оптическую систему"""
-    
-    def __init__(self, dataset: Dict[DataSetKeys, any]):
-        self.dataset = dataset
-        self.count_linse = dataset['count_linse']
-        
-    def n_bk7(self, lambda_um: float) -> float:
-        """Расчёт показателя преломления BK7 стекла"""
-        B1, B2, B3 = 1.03961212, 0.231792344, 1.01046945
-        C1, C2, C3 = 6.00069867e-3, 2.00179144e-2, 1.03560653e2
-        l2 = lambda_um**2
-        n2 = 1 + (B1 * l2) / (l2 - C1) + (B2 * l2) / (l2 - C2) + (B3 * l2) / (l2 - C3)
-        return n2**0.5
-    
-    def trace_ray(self, h_start: float, lmbd: float, heights: List[float]) -> Tuple[float, float]:
-        """
-        Трассировка луча через оптическую систему
-        
-        Args:
-            h_start: Начальная высота луча
-            lmbd: Длина волны в метрах
-            heights: Высоты микрорельефа для каждой линзы
-            
-        Returns:
-            (h_final, alpha_final): Конечная высота и угол луча
-        """
-        # Начальные условия
-        h = h_start
-        alpha = 0.0  # Луч идёт параллельно оптической оси
-        
-        for i in range(1, self.count_linse + 1):
-            # Расчёт параметров i-й линзы
-            refractive_index = self.n_bk7(lmbd * 1e6)
-            focus_0 = self.dataset['focus_0'][i] * 1e-3  # Переводим в метры
-            harmonica = self.dataset['harmonica'][i]
-            height = heights[i-1] * 1e-6  # Переводим в метры
-            
-            # Расчёт эффективной длины волны и оптической силы
-            lambda_0 = height * (refractive_index - 1) / harmonica
-            k = round((lambda_0 / lmbd) * harmonica)
-            if k == 0:
-                k = 0.5
-                
-            focus = ((harmonica * lambda_0) / (k * lmbd)) * focus_0
-            optic_power = 1 / focus
-            
-            # Преломление на линзе
-            h_new = h
-            alpha_new = alpha - optic_power * h
-            
-            # Перенос до следующей линзы
-            if i < self.count_linse:
-                refractive_area = self.dataset['refractive_area'][f'{i}-{i+1}']
-                dist = self.dataset['distance'][f'{i}-{i+1}'] * 1e-3  # Переводим в метры
-                reduce_dist = dist / refractive_area
-                
-                h = h_new + alpha_new * reduce_dist
-                alpha = alpha_new
-            else:
-                # Для последней линзы считаем, где пересечётся с осью
-                h = h_new
-                alpha = alpha_new
-        
-        return h, alpha
-    
-    def find_focus_position(self, lmbd: float, heights: List[float]) -> float:
-        """
-        Нахождение положения фокуса для заданной длины волны
-        
-        Returns:
-            Позиция фокуса относительно последней линзы
-        """
-        # Трассируем луч на высоте 1 мм
-        h_test = 1e-3
-        h_final, alpha_final = self.trace_ray(h_test, lmbd, heights)
-        
-        # Фокус находится там, где луч пересекает оптическую ось
-        if abs(alpha_final) < 1e-10:
-            return float('inf')  # Параллельный пучок
-        
-        focus_pos = h_final / alpha_final
-        return abs(focus_pos)
+from tracing import trace_focus_dict
 
 
 class OptimizationAndTracing:
@@ -143,7 +60,8 @@ class OptimizationAndTracing:
         optimizer = TwoLensOptimizer()
         
         # Поиск оптимальных высот
-        dataset = DataSetHelper.create_dataset(count_linse=2, harmonica={1 : h0, 2: h0 + 0.5}) if None else dataset
+        if dataset is None:
+            dataset = DataSetHelper.create_dataset(count_linse=2)
         h_range = np.linspace(5, 10, 100) if h_range is None else h_range
         min_foc_dist = float('inf')
         best_heights = [h0, h0]
@@ -184,7 +102,8 @@ class OptimizationAndTracing:
         optimizer = ThreeLensOptimizer()
         
         # Поиск оптимальных высот
-        dataset = DataSetHelper.create_dataset(count_linse=3, harmonica={1 : h0, 2: h0, 3: h0}) if None else dataset
+        if dataset is None:
+            dataset = DataSetHelper.create_dataset(count_linse=3)
         h_range = np.linspace(5, 10, 100) if h_range is None else h_range
         min_foc_dist = float('inf')
         best_heights = [h0, h0, h0]
@@ -228,7 +147,8 @@ class OptimizationAndTracing:
         optimizer = FourLensOptimizer()
         
         # Поиск оптимальных высот (упрощённый перебор)
-        dataset = DataSetHelper.create_dataset(count_linse=4, harmonica={1 : h0, 2: h0, 3: h0, 4: h0}) if None else dataset
+        if dataset is None:
+            dataset = DataSetHelper.create_dataset(count_linse=4)
         h_range = np.linspace(5, 10, 50) if h_range is None else h_range
         min_foc_dist = float('inf')
         best_heights = [h0, h0, h0, h0]
@@ -267,23 +187,22 @@ class OptimizationAndTracing:
         return best_heights, min_foc_dist
     
     def trace_rays(self, dataset: Dict, heights: List[float], system_name: str) -> Dict:
-        """Трассировка лучей для найденных оптимальных параметров"""
-        tracer = RayTracer(dataset)
-        
-        # Диапазон длин волн
-        lambda_range = np.linspace(dataset['lower_lambda'] * 1e-9, 
-                                 dataset['upper_lambda'] * 1e-9, 50)
-        
-        focus_positions = []
-        
+        """
+        Трассировка лучей для найденных оптимальных параметров: положение
+        фокуса за последней линзой, усреднённое по вееру лучей (как N12Click в C++)
+        """
+        # Те же длины волн, что и в параксиальном расчёте
+        lambda_range = np.linspace(dataset['lower_lambda'] * 1e-9,
+                                 dataset['upper_lambda'] * 1e-9, 601)
+
         print(f"Трассировка лучей для {system_name}...")
-        
-        for lmbd in lambda_range:
-            focus_pos = tracer.find_focus_position(lmbd, heights)
-            focus_positions.append(focus_pos)
-        
+
+        focus_dict = trace_focus_dict(dataset,
+                                      heights={UnitType.MICROMETER: heights},
+                                      lambda_massive=lambda_range)
+
         # Вычисление ширины фокального отрезка
-        focus_positions = np.array(focus_positions)
+        focus_positions = np.array(list(focus_dict.values()))
         focus_width = np.max(focus_positions) - np.min(focus_positions)
         
         results = {
@@ -366,7 +285,7 @@ class OptimizationAndTracing:
         
         ax1.plot(lmbd_list, f_list, 'b-', linewidth=2, label='Параксиальный расчёт')
         ax1.set_xlabel('Длина волны, нм')
-        ax1.set_ylabel('Фокусное расстояние, мм')
+        ax1.set_ylabel('Задний фокальный отрезок, мм')
         ax1.set_title(f'Параксиальный расчёт ({count_linse} линзы)')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
@@ -409,4 +328,3 @@ class OptimizationAndTracing:
             print(f"  Оптимальные высоты: {[f'{h:.2f} мкм' for h in result['best_heights']]}")
             print(f"  Фокальный отрезок (параксиальный): {result['min_foc_dist_paraxial']*1000:.4f} мм")
             print(f"  Фокальный отрезок (трассировка): {result['tracing_results']['focus_width']:.4f} мм")
-            print(f"  Время оптимизации и трассировки: {result['time'] // 60} мин {result['time'] % 60:.2f} сек")

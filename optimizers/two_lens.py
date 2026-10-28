@@ -11,7 +11,6 @@ from matplotlib.axes import Axes
 from optimizers.base import BaseLensOptimizer
 from utils.unit import UnitType, set_default_unit, unit_to_str_desc
 from utils.keys import *
-from utils.converter import *
 from data.datasets import DATA_SET_2
 
 
