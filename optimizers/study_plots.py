@@ -1,10 +1,10 @@
 """
 Графики по исследованиям систем из 2–5 гармонических линз
-(results/two_lens_study и results/multi_lens_study).
+(results/NIR_3_sem/two_lens_study и results/NIR_3_sem/multi_lens_study).
 
 Читает только CSV, поэтому можно перезапускать без пересчёта:
 python -m optimizers.study_plots
-Рисунки: results/multi_lens_study/figures/
+Рисунки: results/NIR_3_sem/multi_lens_study/figures/
 """
 
 import csv
@@ -16,8 +16,8 @@ import numpy as np
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
 
-TWO_DIR = Path('results') / 'two_lens_study'
-MULTI_DIR = Path('results') / 'multi_lens_study'
+TWO_DIR = Path('results') / 'NIR_3_sem' / 'two_lens_study'
+MULTI_DIR = Path('results') / 'NIR_3_sem' / 'multi_lens_study'
 FIG_DIR = MULTI_DIR / 'figures'
 
 # Категориальная палитра (проверена на различимость при дальтонизме),

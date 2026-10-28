@@ -18,7 +18,7 @@
 для N = 4 и 5 - повторными запусками с разными seed.
 
 Запуск: python -m optimizers.multi_lens_study
-Результаты: results/multi_lens_study/
+Результаты: results/NIR_3_sem/multi_lens_study/
 """
 
 import csv
@@ -47,7 +47,7 @@ MAX_SWEEPS = 30
 N_POLISH = 8                # сколько лучших решений полировать перебором по парам
 SEED = 2026
 
-OUT_DIR = Path('results') / 'multi_lens_study'
+OUT_DIR = Path('results') / 'NIR_3_sem' / 'multi_lens_study'
 
 # Семейства распределения сил (веса до нормировки)
 WEIGHT_FAMILIES = {
@@ -211,6 +211,7 @@ def optimize_heights(f_mm: list[float], d_mm: float, lam: np.ndarray,
     Возвращает (индексы высот, Δf, число отполированных решений, пришедших
     к лучшему).
     """
+
     table = order_table(lam)
     n = len(f_mm)
     design = int(np.argmin(np.abs(H_GRID_UM - design_height_um())))
@@ -255,6 +256,7 @@ def powers_for_total(weights: np.ndarray, d_mm: float) -> list[float]:
     чтобы сила системы была Φ: Φ_N = (Φ + C') / A', где (A', C') - элементы
     матрицы первых N - 1 линз вместе с последним промежутком.
     """
+    
     w = weights / weights.sum()
     f_first = [1 / (wi * PHI_TOTAL) for wi in w[:-1]]
     m = IDENTITY

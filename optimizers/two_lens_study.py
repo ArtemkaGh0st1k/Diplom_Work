@@ -14,7 +14,7 @@
 (optimizers/tracing, режим grating).
 
 Запуск: python -m optimizers.two_lens_study
-Результаты: results/two_lens_study/
+Результаты: results/NIR_3_sem/two_lens_study/
 """
 
 import csv
@@ -63,7 +63,7 @@ SUBSTRATE_MM = 0.01          # тонкая подложка - ближе к т�
 N_RAYS = 10                  # веер лучей как в C++ (N12Click)
 NEAR_OPT_TOL = 0.01          # «почти оптимальные» точки: в пределах 1% от минимума
 
-OUT_DIR = Path('results') / 'two_lens_study'
+OUT_DIR = Path('results') / 'NIR_3_sem' / 'two_lens_study'
 
 
 @dataclass
