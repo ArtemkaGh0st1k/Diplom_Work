@@ -34,6 +34,9 @@ def table_medium(values: np.ndarray) -> Medium:
     """
     Таблица из .nnn файла: 1000 значений с шагом 10 нм,
     индекс как в C++: n[(int)(Lw * 100000)], Lw в мм.
+
+    Отбрасывание дробной части оставлено намеренно, как в Harmony.exe:
+    при Lw = 550 * 0.000001 индекс равен 54, то есть берётся n(540 нм).
     """
     values = np.asarray(values, dtype=float)
     return lambda lw: float(values[int(lw * 100000)])
