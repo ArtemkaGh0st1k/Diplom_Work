@@ -129,6 +129,21 @@ def fig_task1_gain(data, path):
     plt.close(fig)
 
 
+def panel_grid(count: int, panel_size=(4.6, 3.4)):
+    """
+    Сетка панелей в две колонки, чтобы рисунок оставался читаемым на странице A4.
+    Возвращает (фигура, панели, число колонок).
+    """
+    ncols = 2 if count > 2 else count
+    nrows = int(np.ceil(count / ncols))
+    fig, axes = plt.subplots(nrows, ncols, sharey=True, squeeze=False,
+                             figsize=(panel_size[0] * ncols, panel_size[1] * nrows))
+    axes = axes.ravel()
+    for ax in axes[count:]:
+        ax.set_visible(False)
+    return fig, axes[:count], ncols
+
+
 def fig_task1_heights(data, path):
     """
     Оптимальные высоты от расстояния: панель на каждое N.
@@ -138,10 +153,10 @@ def fig_task1_heights(data, path):
     именно набор высот, поэтому высоты отсортированы по величине.
     """
     ns = sorted({r['n'] for r in data})
-    fig, axes = plt.subplots(1, len(ns), figsize=(3.6 * len(ns), 4), sharey=True)
+    fig, axes, ncols = panel_grid(len(ns), panel_size=(4.6, 3.8))
     lam0_um, n_glass = 0.55, 1.5185224
     unit = lam0_um / (n_glass - 1)
-    for ax, n in zip(np.atleast_1d(axes), ns):
+    for ax, n in zip(axes, ns):
         rows = sorted((r for r in data if r['n'] == n), key=lambda r: r['d'])
         d = [r['d'] for r in rows]
         # Ранг высоты - порядковый признак: оттенки одного цвета от светлого к тёмному
@@ -156,12 +171,14 @@ def fig_task1_heights(data, path):
         ax.set_xlim(0, 120)
         ax.set_title(f'N = {n}', fontsize=10)
         ax.set_xlabel('d, мм')
-        ax.legend(fontsize=7, loc='upper center', bbox_to_anchor=(0.5, -0.22), ncol=2)
-    np.atleast_1d(axes)[0].set_ylabel('Оптимальная высота рельефа, мкм')
+        ax.legend(fontsize=7, loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=3)
+    for ax in axes[::ncols]:
+        ax.set_ylabel('Высота рельефа, мкм')
     fig.suptitle('Набор оптимальных высот, отсортированных по величине '
                  '(пунктир — H = 7λ0/(n−1), точки — границы полосы порядка 7)',
                  fontsize=10, x=0.01, ha='left')
     fig.tight_layout()
+    fig.subplots_adjust(hspace=0.75)
     fig.savefig(path)
     plt.close(fig)
 
@@ -195,8 +212,8 @@ def fig_task2a(data, path):
 def fig_task2b(data, path):
     """Постоянная сила системы, разнесение линз: панель на каждое N."""
     ns = sorted({r['n'] for r in data})
-    fig, axes = plt.subplots(1, len(ns), figsize=(3.6 * len(ns), 4), sharey=True)
-    for ax, n in zip(np.atleast_1d(axes), ns):
+    fig, axes, ncols = panel_grid(len(ns))
+    for ax, n in zip(axes, ns):
         for family in ('equal', 'ramp_up', 'ramp_down'):
             rows = sorted((r for r in data if r['n'] == n and r['family'] == family),
                           key=lambda r: r['d'])
@@ -206,8 +223,9 @@ def fig_task2b(data, path):
                     color=FAMILY_COLOR[family], label=FAMILY_LABEL[family])
         ax.set_title(f'N = {n}', fontsize=10)
         ax.set_xlabel('d, мм')
-    np.atleast_1d(axes)[0].set_ylabel('Q = Δf / f, %')
-    np.atleast_1d(axes)[-1].legend(fontsize=8)
+    for ax in axes[::ncols]:
+        ax.set_ylabel('Q = Δf / f, %')
+    axes[-1].legend(fontsize=8)
     fig.suptitle('Сила системы постоянна (1/100 мм⁻¹), линзы разнесены на d',
                  fontsize=10, x=0.01, ha='left')
     fig.tight_layout()
@@ -221,8 +239,8 @@ def fig_best_by_n(data, path):
     fig, ax = plt.subplots(figsize=(7, 4.2))
     # Последний элемент - сдвиг подписи по вертикали: у задачи 2б подписи под точками
     for label, rows, color, marker, dy in (
-            ('одинаковые линзы, лучшее d (задача 1)', data['task1'], '#2a78d6', 'o', 7),
-            ('сила постоянна, лучшее d и распределение (задача 2б)', data['task2b'],
+            ('одинаковые линзы, лучшее d', data['task1'], '#2a78d6', 'o', 7),
+            ('сила постоянна, лучшее d и распределение', data['task2b'],
              '#eb6834', 's', -14),
             ('d = 0, исходные высоты', [dict(r, q=r['q_design']) for r in data['task1']
                                         if r['d'] == 0], INK_MUTED, 'x', 7)):

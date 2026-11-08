@@ -390,7 +390,7 @@ def plot_task_1(rows: list[CaseResult], path: Path) -> None:
     ax.set_xlim(left=0)
     ax.set_xlabel('Расстояние между соседними линзами d, мм')
     ax.set_ylabel('Относительный хроматизм Q = Δf/f, %')
-    ax.set_title('Задача 1: одинаковые линзы f0 = 100·N мм (x — трассировка)')
+    ax.set_title('Одинаковые линзы f0 = 100·N мм (x — трассировка)')
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8, ncol=2)
     fig.tight_layout()
@@ -399,19 +399,32 @@ def plot_task_1(rows: list[CaseResult], path: Path) -> None:
 
 
 def plot_task_2b(rows: list[CaseResult], path: Path) -> None:
+    labels = {'equal': 'поровну', 'ramp_up': 'по возрастанию', 'ramp_down': 'по убыванию'}
     ns = sorted({r.n_lens for r in rows})
-    fig, axes = plt.subplots(1, len(ns), figsize=(5 * len(ns), 4.5), sharey=True)
-    for ax, n in zip(np.atleast_1d(axes), ns):
+    # Две колонки, чтобы рисунок оставался читаемым на странице A4
+    ncols = 2
+    nrows = int(np.ceil((len(ns) + 1) / ncols))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(9, 3.6 * nrows), sharey=True,
+                             squeeze=False)
+    axes = axes.ravel()
+    for ax, n in zip(axes, ns):
         for family in FAMILIES_2B:
             part = [r for r in rows if r.n_lens == n and r.family == family]
             ax.plot([r.d_mm for r in part], [r.q_opt * 100 for r in part], 'o-',
-                    label=family)
+                    label=labels[family])
         ax.set_title(f'N = {n}')
         ax.set_xlabel('d, мм')
         ax.grid(True, alpha=0.3)
-    np.atleast_1d(axes)[0].set_ylabel('Q = Δf/f, %')
-    np.atleast_1d(axes)[0].legend()
-    fig.suptitle('Задача 2б: сила системы постоянна (1/100 мм⁻¹), разные распределения сил')
+    for ax in axes[::ncols]:
+        ax.set_ylabel('Q = Δf/f, %')
+    # Свободная панель - под легенду
+    legend_ax = axes[len(ns)]
+    legend_ax.axis('off')
+    legend_ax.legend(*axes[0].get_legend_handles_labels(), loc='center',
+                     title='Распределение сил')
+    for ax in axes[len(ns) + 1:]:
+        ax.set_visible(False)
+    fig.suptitle('Сила системы постоянна (1/100 мм⁻¹), разные распределения сил')
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
