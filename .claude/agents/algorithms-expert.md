@@ -15,7 +15,7 @@ tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 
 ## Контекст проекта
 
-Оптимизация систем из 2–5 гармонических дифракционных линз: подбор высот микрорельефа h₁…hₙ (и связанных гармоник m) для минимизации ширины фокального отрезка в спектральном диапазоне. Код: `optimizers/base.py` (целевая функция `lmbd_focus_dict`, ABCD-матрицы), `optimizers/two_lens.py` … `five_lens.py`, `optimizers/compare_optimization_methods.py`, `optimizers/comprehensive_optimization.py`.
+Оптимизация систем из 2–5 гармонических дифракционных линз: подбор высот микрорельефа h₁…hₙ (и связанных гармоник m) для минимизации ширины фокального отрезка в спектральном диапазоне. Код: `optimizers/base.py` (целевая функция `lmbd_focus_dict`, ABCD-матрицы), `optimizers/two_lens.py` … `five_lens.py`, `optimizers/two_lens_study.py` и `optimizers/multi_lens_study.py` (перебор и покоординатный спуск по сетке высот), трассировка — `optimizers/tracing/`.
 
 ## Как работать
 
