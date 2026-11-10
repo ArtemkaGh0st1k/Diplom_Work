@@ -1,0 +1,33 @@
+{
+  "model": "conv",
+  "params": 2415217,
+  "epochs": 40,
+  "train_size": 31739,
+  "val_size": 3797,
+  "test_size": 4227,
+  "train_time_s": 6516.2,
+  "test": {
+    "cc_mean": 0.9904916286468506,
+    "cc_median": 0.9951890707015991,
+    "ssim_mean": 0.9952821135520935,
+    "ee50_abs_err_mean": 0.03438747301697731,
+    "rms_rel_err_mean": 0.08456184715032578,
+    "ee50_rank_corr": 0.9333580478076899
+  },
+  "test_optimized": {
+    "cc_mean": 0.9941790103912354,
+    "cc_median": 0.9965145587921143,
+    "ssim_mean": 0.9971895217895508,
+    "ee50_abs_err_mean": 0.027933796867728233,
+    "rms_rel_err_mean": 0.07847783714532852,
+    "ee50_rank_corr": 0.9490319107053156
+  },
+  "test_random": {
+    "cc_mean": 0.9867672920227051,
+    "cc_median": 0.992699384689331,
+    "ssim_mean": 0.9933557510375977,
+    "ee50_abs_err_mean": 0.04090559855103493,
+    "rms_rel_err_mean": 0.09070663154125214,
+    "ee50_rank_corr": 0.9046192820184672
+  }
+}
