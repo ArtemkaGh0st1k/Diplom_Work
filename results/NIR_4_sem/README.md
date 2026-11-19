@@ -217,3 +217,5 @@ python -m nn.inverse --model physics
 | `figures/examples_*.png` | примеры ФРТ: трассировка и сеть |
 | `figures/inverse_ee50_*.png` | EE50 при разных способах подбора высот |
 | `figures/inverse_psf_*.png` | ФРТ найденных систем |
+| `figures/dataset_overview.png`, `figures/network_scheme.png` | состав датасета и схема сети для отчёта (`python -m nn.report_figures`) |
+| `ВасильевАС_6231_НИР_магистра_4семестр_2026.docx` | отчёт НИР за 4 семестр |
